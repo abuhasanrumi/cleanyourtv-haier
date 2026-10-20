@@ -143,6 +143,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private boolean settingsKeyPanel;
     /** Calmer motion for weak GPUs (config.xml, reduced_motion): stiff spring, short fades, no replay. */
     private boolean reducedMotion;
+    private boolean hdmiNumberKeys;
     /** config.xml dock_row: the first row is a separate dock (band, parked low, top shelf) rather than plain grid. */
     private boolean dockRow;
     /** Festive skin from the theme (see Festival); applied while it is active today. */
@@ -253,6 +254,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         animations = cfg.animations;
         advancedEffects = cfg.animations && cfg.advancedEffects;
         reducedMotion = cfg.reducedMotion;
+        hdmiNumberKeys = cfg.hdmiNumberKeys;
         dockRow = cfg.dockRow;
         festival = cfg.festival;
         festive = festival.active(LocalDate.now());
@@ -784,6 +786,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         if (handleSettingsKey(event)) return true;
+        if (handleNumberKey(event)) return true;
         if (!reordering) return super.dispatchKeyEvent(event);
         boolean down = event.getAction() == KeyEvent.ACTION_DOWN;
         int code = event.getKeyCode();
@@ -1738,6 +1741,31 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         open(new Intent(inputAction).setDataAndType(uri, "vnd.android.cursor.item/channel"));
     }
 
+    /**
+     * Number keys 1 to 9 open that HDMI port, in the order the Inputs menu lists them (hdmi_number_keys;
+     * idea from CleanMyTCL in SHOWCASE.md). Not while reordering or with a menu open.
+     */
+    private boolean handleNumberKey(KeyEvent event) {
+        int n = event.getKeyCode() - KeyEvent.KEYCODE_1;
+        if (!hdmiNumberKeys || reordering || openPopup != null || n < 0 || n > 8) return false;
+        if (event.getAction() != KeyEvent.ACTION_UP) return true;
+        List<String> ports = new ArrayList<>();
+        TvInputManager tim = (TvInputManager) getSystemService(TV_INPUT_SERVICE);
+        if (tim != null) {
+            List<TvInputInfo> inputs = new ArrayList<>(tim.getTvInputList());
+            Collections.sort(inputs, (a, b) -> String.valueOf(a.loadLabel(this))
+                    .compareToIgnoreCase(String.valueOf(b.loadLabel(this))));
+            for (TvInputInfo info : inputs) {
+                if (info.isPassthroughInput() && info.getType() == TvInputInfo.TYPE_HDMI && !info.isHidden(this)) {
+                    ports.add(info.getId());
+                }
+            }
+        }
+        if (n < ports.size()) openInput(ports.get(n));
+        else Toast.makeText(this, R.string.not_available, Toast.LENGTH_SHORT).show();
+        return true;
+    }
+
     /** Dropdown menu under the Inputs pill: HDMI ports (with connection state), AV and Live TV. */
     private void showInputs() {
         View anchor = findViewById(R.id.btnInputs);
@@ -1896,6 +1924,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         PopupWindow popup = glassPopup(panel, (int) (200 * density));
         addSettingsMenuRow(rows, popup, R.string.launcher_settings, () -> startActivityForResult(
                 new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST));
+        addSleepRow(rows);
         if (moduleCards) addSettingsMenuRow(rows, popup, R.string.module_cards, this::showModuleCards);
         addSettingsMenuRow(rows, popup, R.string.reorder, this::toggleReorder);
         panel.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
@@ -1904,6 +1933,18 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         dropIn(popup, panel, anchor, getResources().getBoolean(R.bool.rtl_menu_bar)
                 ? Gravity.START : Gravity.END);
         rows.getChildAt(0).requestFocus();
+    }
+
+    /** Sleep timer: each OK steps it (Off, 30, 60, 90, 120 minutes) and the menu stays open. */
+    private void addSleepRow(LinearLayout rows) {
+        View row = getLayoutInflater().inflate(R.layout.item_input, rows, false);
+        row.findViewById(R.id.icon).setVisibility(View.GONE);
+        row.findViewById(R.id.dot).setVisibility(View.GONE);
+        ((TextView) row.findViewById(R.id.title)).setText(R.string.sleep_timer);
+        TextView status = row.findViewById(R.id.status);
+        status.setText(Sleep.label(this));
+        row.setOnClickListener(v -> status.setText(Sleep.press(this)));
+        rows.addView(row);
     }
 
     private void addSettingsMenuRow(LinearLayout rows, PopupWindow popup, int title, Runnable action) {

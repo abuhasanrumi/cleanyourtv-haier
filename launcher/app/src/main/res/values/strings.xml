@@ -86,4 +86,11 @@
         <item quantity="one">%1$d app</item>
         <item quantity="other">%1$d apps</item>
     </plurals>
+    <!-- Sleep timer (Settings hold-OK menu and the quick settings panel) -->
+    <string name="sleep_timer">Sleep timer</string>
+    <string name="sleep_off">Off</string>
+    <string name="sleep_minutes">%1$d min</string>
+    <string name="sleep_set">The TV turns off in %1$d minutes</string>
+    <string name="sleep_cancelled">Sleep timer off</string>
+    <string name="sleep_needs_service">The sleep timer needs the launcher installed with INPUT_KEY_SERVICE=1</string>
 </resources>

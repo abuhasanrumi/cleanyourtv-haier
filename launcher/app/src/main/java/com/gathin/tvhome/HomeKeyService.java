@@ -30,6 +30,13 @@ public class HomeKeyService extends AccessibilityService {
         Config config = Config.load(this);
         settingsKeycodes = config.settingsKeycodes;
         settingsPanel = config.settingsKeyPanel;
+        Sleep.attach(this);   // lets the sleep timer put the TV in standby
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        Sleep.detach(this);
+        return super.onUnbind(intent);
     }
 
     private boolean isSettingsKey(KeyEvent event) {

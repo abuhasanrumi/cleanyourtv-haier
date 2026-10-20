@@ -77,6 +77,8 @@ final class Config {
     /** Sunrise and sunset as minutes since midnight, for a theme's time-of-day wallpapers (DayPhase). */
     final int sunrise;
     final int sunset;
+    /** Number keys 1 to 9 on Home open HDMI 1 to 9 (config.xml hdmi_number_keys). */
+    final boolean hdmiNumberKeys;
     /** Whether the overlay file was present and parsed. */
     final boolean overlayApplied;
     /** Festive skin from a theme (festival, festival_until, greeting, accent_color); {@link Festival#NONE} if none. */
@@ -88,7 +90,7 @@ final class Config {
                    boolean shamsiDate, boolean moduleCards, boolean reducedMotion, boolean dockTitle, boolean dockRow, boolean reorderButton, String vpnApp,
                    boolean showHomeSettingsShortcut, boolean showStats, boolean appLibrary, int backgroundColor, int skyIntensity,
                    int[] settingsKeycodes, boolean settingsKeyPanel, File wallpaper, int sunrise, int sunset,
-                   boolean overlayApplied, Festival festival) {
+                   boolean hdmiNumberKeys, boolean overlayApplied, Festival festival) {
         this.dockApps = Collections.unmodifiableList(dockApps);
         this.fillDock = fillDock;
         this.hiddenApps = Collections.unmodifiableList(hiddenApps);
@@ -118,6 +120,7 @@ final class Config {
         this.wallpaper = wallpaper;
         this.sunrise = sunrise;
         this.sunset = sunset;
+        this.hdmiNumberKeys = hdmiNumberKeys;
         this.overlayApplied = overlayApplied;
         this.festival = festival;
     }
@@ -157,6 +160,7 @@ final class Config {
         boolean settingsKeyPanel = res.getBoolean(R.bool.settings_key_panel);
         boolean applied = false;
         int sunrise = DayPhase.DEFAULT_SUNRISE, sunset = DayPhase.DEFAULT_SUNSET;
+        boolean hdmiNumberKeys = res.getBoolean(R.bool.hdmi_number_keys);
 
         File dir = dir(ctx);
         File file = dir != null ? new File(dir, FILE_NAME) : null;
@@ -191,6 +195,7 @@ final class Config {
             settingsKeyPanel = bool(json, "settings_key_panel", settingsKeyPanel);
             sunrise = DayPhase.parse(string(json, "sunrise", ""), sunrise);
             sunset = DayPhase.parse(string(json, "sunset", ""), sunset);
+            hdmiNumberKeys = bool(json, "hdmi_number_keys", hdmiNumberKeys);
         }
         // A theme push or reset invalidates choices made on the TV. On first use, remember the
         // current theme without clearing choices from an older launcher version.
@@ -212,7 +217,7 @@ final class Config {
                 Math.max(1, columns), Math.max(0, rowsBelow), animations, advancedEffects,
                 shamsi, moduleCards, reducedMotion, dockTitle, dockRow, reorderButton, vpn, homeSettings, showStats, library, background,
                 Math.max(0, Math.min(100, skyIntensity)), settingsKeycodes, settingsKeyPanel, wallpaper, sunrise, sunset,
-                applied, festival);
+                hdmiNumberKeys, applied, festival);
     }
 
     private static void syncThemeChoices(SharedPreferences choices, File dir, File config) {

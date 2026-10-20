@@ -17,6 +17,18 @@ public class InputKeyService extends AccessibilityService {
     private static final String ACTION_VIEW_INPUTS = "com.android.tv.action.VIEW_INPUTS";
 
     @Override
+    protected void onServiceConnected() {
+        super.onServiceConnected();
+        Sleep.attach(this);   // lets the sleep timer put the TV in standby
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        Sleep.detach(this);
+        return super.onUnbind(intent);
+    }
+
+    @Override
     protected boolean onKeyEvent(KeyEvent event) {
         if (event.getKeyCode() != KeyEvent.KEYCODE_TV) return false;
         if (event.getAction() == KeyEvent.ACTION_UP) {

@@ -30,6 +30,7 @@ public final class QuickSettingsActivity extends Activity {
         addRow(rows, R.drawable.ic_wifi, R.string.quick_network, 0, new Intent(Settings.ACTION_WIFI_SETTINGS));
         addRow(rows, R.drawable.ic_apps, R.string.quick_apps, R.string.quick_apps_hint,
                 new Intent(Settings.ACTION_MANAGE_APPLICATIONS_SETTINGS));
+        addSleepRow(rows);
         // Through Home, so it rebuilds with the new choices when Launcher settings closes.
         addRow(rows, R.drawable.ic_home_settings, R.string.launcher_settings, 0,
                 new Intent(this, MainActivity.class).setAction(MainActivity.ACTION_LAUNCHER_SETTINGS));
@@ -49,6 +50,18 @@ public final class QuickSettingsActivity extends Activity {
         super.onPause();
         finish();
         overridePendingTransition(0, 0);
+    }
+
+    /** Sleep timer: OK steps it and the panel stays open, so it can be set over a film. */
+    private void addSleepRow(LinearLayout rows) {
+        View row = getLayoutInflater().inflate(R.layout.item_input, rows, false);
+        ((ImageView) row.findViewById(R.id.icon)).setImageResource(R.drawable.ic_sleep);
+        ((TextView) row.findViewById(R.id.title)).setText(R.string.sleep_timer);
+        row.findViewById(R.id.dot).setVisibility(View.GONE);
+        TextView status = row.findViewById(R.id.status);
+        status.setText(Sleep.label(this));
+        row.setOnClickListener(v -> status.setText(Sleep.press(this)));
+        rows.addView(row);
     }
 
     private void addRow(LinearLayout rows, int icon, int title, int status, Intent target) {

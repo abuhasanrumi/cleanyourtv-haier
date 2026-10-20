@@ -54,6 +54,7 @@ is ignored, and a file that doesn't parse is ignored as a whole, so a theme can 
 | `background_color` | `#RRGGBB` | Colour behind everything; black by default |
 | `sky_intensity` | 0 to 100 | Time-of-day backdrop: a dark gradient that follows the clock, 0 hides it (default) |
 | `wallpaper` | bool | Show `wallpaper.jpg` from the theme folder (`true`), or ignore it (`false`) |
+| `hdmi_number_keys` | bool | Number keys 1 to 9 on Home open HDMI 1 to 9 (Haier fork, on by default) |
 | `sunrise`, `sunset` | `HH:MM` | When the sun rises and sets where the TV is, for time-of-day wallpapers; 06:00 and 18:00 if not set. Times less than six hours apart are ignored |
 | `festival` | string | Turns on a festive skin: the network pill becomes a diya whose flame follows the connection, Inputs a temple bell, Settings a marigold, and the first Home of the day gets a petal shower. `dussehra` and `diwali` have built-in greetings |
 | `festival_until` | `YYYY-MM-DD` | Last day the festive skin shows; it switches itself off after that. A malformed date turns it off |
