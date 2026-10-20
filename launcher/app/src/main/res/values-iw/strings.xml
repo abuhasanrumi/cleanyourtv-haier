@@ -85,4 +85,11 @@
         <item quantity="two">שתי אפליקציות</item>
         <item quantity="other">%1$d אפליקציות</item>
     </plurals>
+    <!-- טיימר שינה -->
+    <string name="sleep_timer">טיימר שינה</string>
+    <string name="sleep_off">כבוי</string>
+    <string name="sleep_minutes">%1$d דק׳</string>
+    <string name="sleep_set">הטלוויזיה תיכבה בעוד %1$d דקות</string>
+    <string name="sleep_cancelled">טיימר השינה כבוי</string>
+    <string name="sleep_needs_service">טיימר השינה דורש התקנה של המשגר עם INPUT_KEY_SERVICE=1</string>
 </resources>
