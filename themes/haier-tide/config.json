@@ -1,0 +1,9 @@
+{
+  "reduced_motion": true,
+  "animations": true,
+  "advanced_effects": false,
+  "module_cards": false,
+  "sky_intensity": 0,
+  "background_color": "#040812",
+  "wallpaper": true
+}

@@ -17,6 +17,10 @@ powershell -ExecutionPolicy Bypass -File tools\theme.ps1 -TvHost 192.168.1.50 th
 | `default/` | The built-in look written out as JSON, as a starting point for your own |
 | `aurora/` | A dark aurora wallpaper (teal and violet on navy, darker at the bottom) with a matching background colour |
 | `dussehra/` | Festive skin for Dussehra (ends 21 Oct 2026): a marigold toran, a faint gold rangoli, a diya for Wi-Fi, a bell for Inputs, a marigold for Settings and a petal shower |
+| `haier-lite/` | Haier fork: the fastest setup for 1 GB sets. No wallpaper, reduced motion, no advanced effects, no module card lookups |
+| `haier-cosy-valley/` | Haier fork: night over a valley with a lit cottage and a crescent moon, under a faint time-of-day tint (`sky_intensity` 25); same speed settings as `haier-lite` |
+| `haier-hearth/` | Haier fork: a low amber fireside glow with drifting embers; same speed settings |
+| `haier-tide/` | Haier fork: deep blue swells under a band of moonlight; same speed settings |
 | `six-columns/` | Six smaller tiles per row and one grid row visible under the dock |
 
 ## Keys
@@ -86,6 +90,12 @@ the plain background; the default is off (the reference launcher looks exactly a
 ```json
 { "sky_intensity": 60 }
 ```
+
+## The Haier fork's wallpapers
+
+The three `haier-*` wallpapers are drawn from code by
+[`tools/wallpapers/make_wallpapers.py`](../tools/wallpapers/make_wallpapers.py) (numpy and Pillow, fixed
+seeds), so they are original and MIT-licensed like the rest of the repo. Each is 1920×1080 and 35 to 45 KB.
 
 ## Adding a theme
 
