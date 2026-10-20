@@ -99,6 +99,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private AppAdapter adapter;
     private RecyclerView grid;
     private FrameLayout root;
+    /** The theme's wallpaper file and the view showing it; the bitmap is let go while Home is hidden and memory is short. */
+    private File wallpaperFile;
+    private ImageView wallView;
     private GlassView glass;
     private View ambient;
     private TextView heroName;
@@ -257,7 +260,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
         root = findViewById(R.id.root);
         root.setBackgroundColor(cfg.backgroundColor);
-        if (cfg.wallpaper != null) showWallpaper(cfg.wallpaper);
+        wallpaperFile = cfg.wallpaper;
+        if (wallpaperFile != null) showWallpaper();
         sky = findViewById(R.id.sky);
         sky.setIntensity(cfg.skyIntensity);
         glass = findViewById(R.id.glass);
@@ -503,7 +507,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
      * costs a screen-sized bitmap (about 4 MB at 1080p), which is the price of a wallpaper on a 1 GB TV.
      * A picture over 4K is refused rather than decoded (#166); the plain colour stays.
      */
-    private void showWallpaper(File file) {
+    private void showWallpaper() {
+        File file = wallpaperFile;
         try {
             android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
             android.graphics.BitmapFactory.Options opts = new android.graphics.BitmapFactory.Options();
@@ -525,13 +530,26 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             opts.inPreferredConfig = android.graphics.Bitmap.Config.RGB_565;   // no alpha needed, half the memory
             android.graphics.Bitmap bmp = android.graphics.BitmapFactory.decodeFile(file.getPath(), opts);
             if (bmp == null) return;
-            android.widget.ImageView wall = new android.widget.ImageView(this);
-            wall.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);
-            wall.setImageBitmap(bmp);
-            root.addView(wall, 0, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            if (wallView == null) {
+                wallView = new ImageView(this);
+                wallView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                root.addView(wallView, 0, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            }
+            wallView.setImageBitmap(bmp);
         } catch (Exception | OutOfMemoryError e) {
             // A bad or huge picture must never take the home screen down; the plain colour stays.
         }
+    }
+
+    /**
+     * Home is out of sight and Android is short of memory: hand the wallpaper bitmap back (about 4 MB at
+     * 1080p, 2 MB at 720p) so the app in front keeps it, and Home is less likely to be killed. onStart
+     * decodes it again. With memory to spare nothing is released and coming back costs nothing.
+     */
+    @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+        if (level >= TRIM_MEMORY_BACKGROUND && wallView != null) wallView.setImageDrawable(null);
     }
 
     /**
@@ -553,6 +571,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     @Override
     protected void onStart() {
         super.onStart();
+        if (wallView != null && wallView.getDrawable() == null) showWallpaper();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(packageReceiver, packageFilter, Context.RECEIVER_NOT_EXPORTED);
         } else {
