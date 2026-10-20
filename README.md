@@ -1,3 +1,143 @@
+# cleanyourtv for Haier TVs
+
+A fork of [cleanyourtv](https://github.com/Gathin23/cleanyourtv) tuned for Haier Android TV and Google TV
+sets: the MediaTek, CVTE-built models with 1 to 1.5 GB of RAM. Same launcher, same tools, same
+one-line restore. What this fork adds is a Haier debloat list, defaults and themes for slow sets,
+three original dark wallpapers, and one memory saving borrowed from
+[Cosy Home](https://github.com/oliverjwroberts/cosy-home-tv).
+
+| | | |
+|---|---|---|
+| ![Cosy valley](themes/haier-cosy-valley/wallpaper.jpg) | ![Hearth](themes/haier-hearth/wallpaper.jpg) | ![Tide](themes/haier-tide/wallpaper.jpg) |
+| `haier-cosy-valley` | `haier-hearth` | `haier-tide` |
+
+> **Not tested on a Haier TV yet.** The launcher builds and passes upstream's tests in CI; see
+> [What has been checked](#what-has-been-checked) before you use it.
+
+## What is different from upstream
+
+- **A common Haier list,** [`examples/haier-common/debloat.txt`](examples/haier-common/debloat.txt). It
+  merges the two Haier lists upstream already has, which were tested on real sets
+  ([DVB2K](examples/haier-android-tv-dvb2k/debloat.txt), Android TV 11, and
+  [H32S80EFX](examples/haier-h32s80efx/debloat.txt), Google TV 14). Each line is tagged with the set it
+  was disabled on. No package was added that is not in one of those lists, and the keep list (remote
+  hot keys, Bluetooth pairing, tuner, factory) is carried over. Everything is disabled with
+  `pm disable-user`, never uninstalled. If your model is one of those two, use its own list instead.
+- **Slow-set defaults in `config.xml`:** `reduced_motion` is on (stiff highlight spring, no overshoot,
+  no tile entrance replay), and `module_cards` is off, so Home does not look up card declarations each
+  time it comes back. Everything else is upstream's default.
+- **Four themes** for [`tools/theme.sh`](tools/theme.sh), all with reduced motion, no advanced effects
+  and no module cards:
+
+  | Theme | Look |
+  |---|---|
+  | [`haier-lite`](themes/haier-lite/config.json) | Black, no wallpaper. The lightest option for 1 GB sets |
+  | [`haier-cosy-valley`](themes/haier-cosy-valley/config.json) | Night over a valley, a cottage with its lights on, a crescent moon; a faint time-of-day tint over it (`sky_intensity` 25) |
+  | [`haier-hearth`](themes/haier-hearth/config.json) | A low amber fireside glow with drifting embers |
+  | [`haier-tide`](themes/haier-tide/config.json) | Deep blue swells under a band of moonlight |
+
+- **Original wallpapers.** All three are drawn from code by
+  [`tools/wallpapers/make_wallpapers.py`](tools/wallpapers/make_wallpapers.py) (numpy and Pillow, fixed
+  seeds), so anyone can rebuild them and they carry the repo's MIT licence. Each is 1920×1080, dark in the
+  clock corner and under the dock, and 35 to 45 KB, well under the 300 KB the themes README asks for.
+- **The wallpaper is let go while Home is hidden** (in `MainActivity.onTrimMemory`). When Android reports
+  memory pressure while another app is in front, Home drops its decoded wallpaper (about 4 MB at 1080p,
+  2 MB at 720p), and decodes it again when you come back. With memory to spare nothing changes.
+
+### What came from Cosy Home
+
+Two of its ideas, reworked to fit this launcher rather than copied:
+
+1. **Handing bitmaps back when out of sight.** Cosy Home releases its scene's bitmaps whenever it is not
+   on screen. Here only the wallpaper is released, and only when Android asks for memory, so coming back
+   to Home costs nothing extra on a TV that is not short of it.
+2. **A cosy valley scene.** Cosy Home draws a live valley that follows the sun. This fork keeps the
+   launcher's no-animation, no-network rule: `haier-cosy-valley` is a still picture of a valley at night
+   with a lit cottage, and upstream's existing time-of-day backdrop (`sky_intensity`) tints it through
+   the day. No weather, no location, no internet permission.
+
+## Install it on a Haier TV
+
+You need a computer on the same network as the TV, Python 3, and for the launcher JDK 17 and Android
+SDK platform 34 (on macOS: `brew install openjdk@17 android-commandlinetools`, then
+`sdkmanager "platforms;android-34" "build-tools;34.0.0"`).
+
+1. **On the TV**, turn on developer options. Android TV: Settings → Device Preferences → About, press OK
+   on **Build** seven times. Google TV: Settings → System → About → **Android TV OS build**, seven times.
+   Then Developer options → **USB debugging** on. The H32S80EFX answered on port 5555 straight away.
+2. **Find the TV's IP address** (Settings → Network) and set up the tools:
+
+   ```bash
+   git clone https://github.com/abuhasanrumi/cleanyourtv-haier && cd cleanyourtv-haier
+   python3 -m venv tools/venv && tools/venv/bin/pip install -r tools/requirements.txt
+   export TV_HOST=192.168.1.50
+   tools/venv/bin/python -I tools/tv.py --probe
+   ```
+
+   Accept "Allow USB debugging?" on the TV.
+3. **Debloat.** Use your model's list if it is in `examples/`, otherwise the common one. Check what it will
+   touch first with `tools/tv.py 'pm list packages | grep -i -e haier -e cvte -e anoki'`.
+
+   ```bash
+   tools/disable.sh examples/haier-common/debloat.txt
+   ```
+
+4. **Install the launcher.** The script finds the stock launcher (`tvlauncher` on Android TV,
+   `launcherx` on Google TV), starts the new one first, and rolls back if Home does not land on it.
+
+   ```bash
+   launcher/build-and-install.sh
+   ```
+
+   On Google TV, if Home falls to Google's setup screen instead, uncomment the `setupwraith` line at the
+   end of the list and run step 3 again. `disable.sh` refuses it while a saved Wi-Fi network belongs to
+   it; the README section on setupwraith below says what to do then.
+5. **Pick a theme:**
+
+   ```bash
+   tools/theme.sh themes/haier-cosy-valley        # or haier-lite, haier-hearth, haier-tide
+   ```
+
+6. **Optional, faster menus everywhere:** halve the system animation scales. `disable.sh` already saved
+   the old values in step 3, so `restore.sh` puts them back.
+
+   ```bash
+   tools/venv/bin/python -I tools/tv.py 'settings put global window_animation_scale 0.5; settings put global transition_animation_scale 0.5; settings put global animator_duration_scale 0.5'
+   ```
+
+**To undo everything:** `tools/restore.sh examples/haier-common/debloat.txt com.google.android.tvlauncher`
+(on Google TV, `com.google.android.apps.tv.launcherx`), and `tools/theme.sh --reset` for the theme.
+
+The launcher keeps upstream's package name, `com.gathin.tvhome`, so `tools/theme.sh` and the restore
+scripts work unchanged, and it installs over an upstream build. Close network debugging when you are done
+(see "Isn't ADB access a security hole?" below).
+
+## What has been checked
+
+| Checked | How |
+|---|---|
+| The launcher builds, lints, passes its unit tests and stays under 400 KB | GitHub Actions on this repo, upstream's own CI workflow |
+| Every debloat list parses, and both README tables match `examples/` | Upstream's `tests/`, in CI and locally |
+| Each theme's `config.json` is valid JSON and uses only documented keys | Locally |
+| Each wallpaper is 1920×1080 and under 300 KB, and looks right as a picture | Locally |
+
+**Not checked:** nothing in this fork has run on a Haier TV. The merged list has not been applied as
+one list to any set (its packages were each disabled on one of the two upstream test sets), the themes
+have not been seen behind the launcher on a TV, and the wallpaper release has not been measured on a
+1 GB set. If you try it, an issue with your model, `tools/tv.py --probe` output and a screenshot is the
+most useful thing you can send.
+
+## Keeping up with upstream
+
+```bash
+git remote add upstream https://github.com/Gathin23/cleanyourtv
+git fetch upstream && git merge upstream/main
+```
+
+---
+
+*Everything below is upstream's README, unchanged apart from the TV tables counting the Haier list.*
+
 <p align="center">
   <a href="https://cleanyour.tv"><img src="https://raw.githubusercontent.com/Gathin23/cleanyourtv/main/docs/banner.png" alt="CleanYourTV. Your TV, minus the ads." width="800"></a>
 </p>
