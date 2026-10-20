@@ -1,0 +1,61 @@
+# Haier Android TV / Google TV, common list for MediaTek (CVTE-built) Haier sets: merged from the two lists
+# in this repo that were tested on real sets, examples/haier-android-tv-dvb2k (Android TV 11, RTMA.250416.179)
+# and examples/haier-h32s80efx (Google TV 14, UKNV.260302.001). Every package below was disabled on at least
+# one of those two TVs; the tag after it says which: [DVB2K], [H32S80EFX] or [both]. Nothing here is new.
+# This merged list itself has NOT been run on a TV. If your model is one of the two above, use its own list.
+#
+# Apply:   TV_HOST=<tv ip> tools/disable.sh examples/haier-common/debloat.txt
+# Undo:    TV_HOST=<tv ip> tools/restore.sh examples/haier-common/debloat.txt com.google.android.tvlauncher
+#          (Google TV: com.google.android.apps.tv.launcherx as the last argument)
+# Everything is DISABLED, not uninstalled. A package your firmware does not have is reported as unknown
+# and skipped; the restore record notes it as not installed. Comment out any line you want to keep.
+#
+# Stock launcher: com.google.android.tvlauncher (Android TV) or com.google.android.apps.tv.launcherx
+# (Google TV). launcher/build-and-install.sh disables it after the new launcher runs; it is not listed here.
+# Live TV on both: com.mediatek.wwtv.tvcenter (.nav.TurnkeyUiMainActivity).
+#
+# KEEP, even though the names look like bloat (from the two lists' dumpsys checks):
+# - com.haier.tv.hmagicboard, com.haier.hkcfac, com.cvte.tv.hkcfac, com.haier.appmanager.dispatcher:
+#   global key receivers, the remote's hot keys.
+# - com.mediatek.autopair, com.example.bt_pair_tips, com.haier.bt_pair_tips: Bluetooth remote pairing.
+# - com.telink.lt.ota: remote firmware.
+# - com.at.factory.*, com.cvte.tv.*, mediatek.factorymenu.ui, com.cvte.autobacklight: factory and backlight.
+# - com.mediatek.wwtv.*, com.mediatek.tvinput, com.mediatek.tv.service, com.google.android.tv.inputplayer:
+#   tuner, inputs, USB media, setup.
+# - com.mediatek.androidbox (HaiCast / Miracast), com.google.android.katniss (Assistant),
+#   com.google.android.apps.mediashell (Chromecast).
+
+# Content recognition and retail demo
+tv.anoki.acr.controller                          # [DVB2K] Anoki ACR (watches what is on screen)
+fusion.android.tv.demo                           # [both] retail demo mode
+
+# Haier telemetry, IoT and share services
+com.haierubic.usmartdevice                       # [both] Haier smart-device service
+it.hon.service                                   # [H32S80EFX] Haier hOn IoT service
+com.haier.yudee.tv                               # [DVB2K] Haier share service
+com.haier.sharetv.webview                        # [DVB2K] webview used by the share service
+com.google.android.feedback                      # [both]
+
+# Haier content, promos and cleaners
+com.haier.apps                                   # [both] promo app (HaierApps_evoSmart / Kinopoisk promo)
+com.haier.launcher.haiermatrix                   # [DVB2K] Zeasn content launcher, not the system Home
+com.haier.oemtabprovider                         # [H32S80EFX] the "Haier" tab on the Google TV home
+com.haier.tvhousekeeper                          # [both] "TV housekeeper" cleaner
+com.cvte.haier.tv.appmanager                     # [DVB2K] boot receiver that manages Haier apps
+com.haier.emanual                                # [H32S80EFX] on-screen manual
+
+# Stock-home recommendation rows and partner auto-install
+com.google.android.tvrecommendations             # [DVB2K] recommendation and ad rows
+com.google.android.partnersetup                  # [DVB2K]
+com.mediatek.android.leanbacklauncher.partnercustomizer  # [both]
+android.autoinstalls.config.haier.hanyang        # [DVB2K] Haier auto-install stub
+
+# Preloaded extras. Keep any you use.
+com.google.android.play.games                    # [both]
+com.google.android.youtube.tvmusic               # [both] YouTube Music, by choice
+
+# Google TV only. Home can fall to setupwraith's RecoveryActivity once launcherx is disabled ([H32S80EFX]).
+# Uncomment this AFTER launcher/build-and-install.sh, only if Home does not land on the new launcher, and
+# run disable.sh again (it adds the new line to the restore record). tools/disable.sh refuses it while a
+# saved Wi-Fi network belongs to it.
+# com.google.android.tungsten.setupwraith
