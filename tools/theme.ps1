@@ -28,7 +28,7 @@ $revision = [guid]::NewGuid().ToString('N')
 $restart = "a=`$(settings get secure enabled_accessibility_services); am force-stop $pkg; am start -n $pkg/.MainActivity >/dev/null; case `"`$a`" in *$pkg*) sleep 1; settings put secure enabled_accessibility_services ''; settings put secure enabled_accessibility_services `"`$a`"; settings put secure accessibility_enabled 1 ;; esac"
 
 if ($Reset) {
-    & $py -I tv.py "mkdir -p $dir; rm -f $dir/config.json $dir/wallpaper.jpg; printf '%s' '$revision' > $dir/theme_revision; $restart; echo reset"
+    & $py -I tv.py "mkdir -p $dir; rm -f $dir/config.json $dir/wallpaper.jpg $dir/wallpaper-[0-9][0-9].jpg; printf '%s' '$revision' > $dir/theme_revision; $restart; echo reset"
     exit 0
 }
 if (-not $Theme) { throw 'usage: theme.ps1 <theme folder> | -Reset' }
@@ -40,6 +40,10 @@ try { Get-Content $config -Raw | ConvertFrom-Json | Out-Null } catch { throw "$c
 & $py -I tv.py --push $config "$dir/config.json"
 $wall = Join-Path $Theme 'wallpaper.jpg'
 if (Test-Path $wall) { & $py -I b64push.py $wall "$dir/wallpaper.jpg" } else { & $py -I tv.py "rm -f $dir/wallpaper.jpg" | Out-Null }
+# Time-of-day frames, wallpaper-00.jpg to wallpaper-15.jpg (themes/README.md); old frames go first.
+& $py -I tv.py "rm -f $dir/wallpaper-[0-9][0-9].jpg" | Out-Null
+Get-ChildItem -Path $Theme -Filter 'wallpaper-??.jpg' | Where-Object { $_.Name -match '^wallpaper-\d\d\.jpg$' } |
+    ForEach-Object { & $py -I b64push.py $_.FullName "$dir/$($_.Name)" }
 & $py -I tv.py "printf '%s' '$revision' > $dir/theme_revision" | Out-Null
 & $py -I tv.py "$restart; echo applied"
 Write-Host "Theme $(Split-Path $Theme -Leaf) is on the TV. Undo with: tools\theme.ps1 -TvHost $TvHost -Reset"

@@ -102,6 +102,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     /** The theme's wallpaper file and the view showing it; the bitmap is let go while Home is hidden and memory is short. */
     private File wallpaperFile;
     private ImageView wallView;
+    /** Time-of-day wallpapers (DayPhase): the frame on screen, -1 without them, and the theme's sunrise and sunset. */
+    private int wallFrame = -1;
+    private int sunrise, sunset;
     private GlassView glass;
     private View ambient;
     private TextView heroName;
@@ -232,6 +235,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             updateGreeting();
             updateWifiLabel();
             sky.update();
+            if (wallFrame >= 0 && wallFrame != dayFrame()) showWallpaper();
             handler.postDelayed(this, MINUTE_MS);
         }
     };
@@ -261,6 +265,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         root = findViewById(R.id.root);
         root.setBackgroundColor(cfg.backgroundColor);
         wallpaperFile = cfg.wallpaper;
+        sunrise = cfg.sunrise;
+        sunset = cfg.sunset;
         if (wallpaperFile != null) showWallpaper();
         sky = findViewById(R.id.sky);
         sky.setIntensity(cfg.skyIntensity);
@@ -508,7 +514,15 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
      * A picture over 4K is refused rather than decoded (#166); the plain colour stays.
      */
     private void showWallpaper() {
-        File file = wallpaperFile;
+        // A theme with wallpaper-00.jpg to wallpaper-15.jpg shows the frame for the time of day, and
+        // wallpaper.jpg for a frame it has no picture for.
+        int frame = dayFrame();
+        File framed = new File(wallpaperFile.getParentFile(), DayPhase.fileName(frame));
+        boolean hasFrame = framed.isFile() && framed.length() > 0;
+        File file = hasFrame ? framed : wallpaperFile;
+        if (hasFrame || wallFrame >= 0) wallFrame = frame;
+        // Let the previous picture go before decoding the next, so two never have to fit at once.
+        if (wallView != null) wallView.setImageDrawable(null);
         try {
             android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
             android.graphics.BitmapFactory.Options opts = new android.graphics.BitmapFactory.Options();
@@ -541,6 +555,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
     }
 
+    private int dayFrame() {
+        java.time.LocalTime now = java.time.LocalTime.now();
+        return DayPhase.frame(now.getHour() * 60 + now.getMinute(), sunrise, sunset);
+    }
+
     /**
      * Home is out of sight and Android is short of memory: hand the wallpaper bitmap back (about 4 MB at
      * 1080p, 2 MB at 720p) so the app in front keeps it, and Home is less likely to be killed. onStart
@@ -571,7 +590,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     @Override
     protected void onStart() {
         super.onStart();
-        if (wallView != null && wallView.getDrawable() == null) showWallpaper();
+        if (wallView != null && (wallView.getDrawable() == null
+                || (wallFrame >= 0 && wallFrame != dayFrame()))) showWallpaper();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(packageReceiver, packageFilter, Context.RECEIVER_NOT_EXPORTED);
         } else {

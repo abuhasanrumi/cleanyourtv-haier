@@ -3,13 +3,15 @@
 A fork of [cleanyourtv](https://github.com/Gathin23/cleanyourtv) tuned for Haier Android TV and Google TV
 sets: the MediaTek, CVTE-built models with 1 to 1.5 GB of RAM. Same launcher, same tools, same
 one-line restore. What this fork adds is a Haier debloat list, defaults and themes for slow sets,
-three original dark wallpapers, and one memory saving borrowed from
-[Cosy Home](https://github.com/oliverjwroberts/cosy-home-tv).
+three original dark wallpapers, and time-of-day wallpapers that follow the sun like macOS's Solar
+Gradients, and two ideas borrowed from [Cosy Home](https://github.com/oliverjwroberts/cosy-home-tv).
 
-| | | |
-|---|---|---|
-| ![Cosy valley](themes/haier-cosy-valley/wallpaper.jpg) | ![Hearth](themes/haier-hearth/wallpaper.jpg) | ![Tide](themes/haier-tide/wallpaper.jpg) |
-| `haier-cosy-valley` | `haier-hearth` | `haier-tide` |
+| | | | |
+|---|---|---|---|
+| ![Cosy valley at sunrise](themes/haier-cosy-valley/wallpaper-04.jpg) | ![Cosy valley by day](themes/haier-cosy-valley/wallpaper-08.jpg) | ![Cosy valley at sunset](themes/haier-cosy-valley/wallpaper-12.jpg) | ![Cosy valley at night](themes/haier-cosy-valley/wallpaper-00.jpg) |
+| Sunrise | Noon | Sunset | Night |
+| ![Solar at sunrise](themes/haier-solar/wallpaper-04.jpg) | ![Hearth](themes/haier-hearth/wallpaper.jpg) | ![Tide](themes/haier-tide/wallpaper.jpg) | ![Solar at noon](themes/haier-solar/wallpaper-08.jpg) |
+| `haier-solar`, sunrise | `haier-hearth` | `haier-tide` | `haier-solar`, noon |
 
 > **Not tested on a Haier TV yet.** The launcher builds and passes upstream's tests in CI; see
 > [What has been checked](#what-has-been-checked) before you use it.
@@ -26,20 +28,30 @@ three original dark wallpapers, and one memory saving borrowed from
 - **Slow-set defaults in `config.xml`:** `reduced_motion` is on (stiff highlight spring, no overshoot,
   no tile entrance replay), and `module_cards` is off, so Home does not look up card declarations each
   time it comes back. Everything else is upstream's default.
-- **Four themes** for [`tools/theme.sh`](tools/theme.sh), all with reduced motion, no advanced effects
+- **Time-of-day wallpapers** (`DayPhase.java`, about 50 lines plus a unit test). A theme can ship
+  sixteen frames, `wallpaper-00.jpg` to `wallpaper-15.jpg`, and the launcher shows the one for the hour,
+  the way macOS's Solar Gradients does: one frame for the night, one for the middle of the day, and seven
+  each around sunrise and sunset, half an hour apart, where the sky changes fastest. Set `"sunrise"` and
+  `"sunset"` in the theme's `config.json` for your town. Only one frame is decoded at a time, so it costs
+  no more memory than one wallpaper, and the frame changes on the minute tick, with no animation.
+  `tools/theme.sh` pushes the frames. Details in [themes/README.md](themes/README.md#time-of-day-wallpapers).
+- **Five themes** for [`tools/theme.sh`](tools/theme.sh), all with reduced motion, no advanced effects
   and no module cards:
 
   | Theme | Look |
   |---|---|
   | [`haier-lite`](themes/haier-lite/config.json) | Black, no wallpaper. The lightest option for 1 GB sets |
-  | [`haier-cosy-valley`](themes/haier-cosy-valley/config.json) | Night over a valley, a cottage with its lights on, a crescent moon; a faint time-of-day tint over it (`sky_intensity` 25) |
+  | [`haier-cosy-valley`](themes/haier-cosy-valley/config.json) | A valley with a cottage, through the day in 16 frames: dawn colours, a sunny noon, a sunset, blue hour, then stars, a crescent moon and the cottage's lights |
+  | [`haier-solar`](themes/haier-solar/config.json) | The same 16 skies as plain gradients, no scene |
   | [`haier-hearth`](themes/haier-hearth/config.json) | A low amber fireside glow with drifting embers |
   | [`haier-tide`](themes/haier-tide/config.json) | Deep blue swells under a band of moonlight |
 
-- **Original wallpapers.** All three are drawn from code by
+- **Original wallpapers.** All of them are drawn from code by
   [`tools/wallpapers/make_wallpapers.py`](tools/wallpapers/make_wallpapers.py) (numpy and Pillow, fixed
-  seeds), so anyone can rebuild them and they carry the repo's MIT licence. Each is 1920×1080, dark in the
-  clock corner and under the dock, and 35 to 45 KB, well under the 300 KB the themes README asks for.
+  seeds), so anyone can rebuild them and they carry the repo's MIT licence. Each is 1920×1080, shaded in the
+  clock corner and under the dock, and 25 to 75 KB, well under the 300 KB the themes README asks for. The
+  time-of-day frames copy only the idea of Solar Gradients, not its pictures or colours. Day frames are
+  brighter than the themes README's "keep it dark"; they get extra shade where the clock and dock sit.
 - **The wallpaper is let go while Home is hidden** (in `MainActivity.onTrimMemory`). When Android reports
   memory pressure while another app is in front, Home drops its decoded wallpaper (about 4 MB at 1080p,
   2 MB at 720p), and decodes it again when you come back. With memory to spare nothing changes.
@@ -51,10 +63,10 @@ Two of its ideas, reworked to fit this launcher rather than copied:
 1. **Handing bitmaps back when out of sight.** Cosy Home releases its scene's bitmaps whenever it is not
    on screen. Here only the wallpaper is released, and only when Android asks for memory, so coming back
    to Home costs nothing extra on a TV that is not short of it.
-2. **A cosy valley scene.** Cosy Home draws a live valley that follows the sun. This fork keeps the
-   launcher's no-animation, no-network rule: `haier-cosy-valley` is a still picture of a valley at night
-   with a lit cottage, and upstream's existing time-of-day backdrop (`sky_intensity`) tints it through
-   the day. No weather, no location, no internet permission.
+2. **A valley that follows the sun.** Cosy Home draws a live valley scene for dawn, day, dusk and night,
+   and lights its cottage at dusk. This fork keeps the launcher's no-animation, no-network rule:
+   `haier-cosy-valley` is sixteen still pictures, picked by the clock from the sunrise and sunset you set.
+   There's no weather, no location and no internet permission.
 
 ## Install it on a Haier TV
 
@@ -95,8 +107,12 @@ SDK platform 34 (on macOS: `brew install openjdk@17 android-commandlinetools`, t
 5. **Pick a theme:**
 
    ```bash
-   tools/theme.sh themes/haier-cosy-valley        # or haier-lite, haier-hearth, haier-tide
+   tools/theme.sh themes/haier-cosy-valley        # or haier-solar, haier-lite, haier-hearth, haier-tide
    ```
+
+   For `haier-cosy-valley` and `haier-solar`, first set `"sunrise"` and `"sunset"` in the theme's
+   `config.json` to your town's times (24-hour, for example `"05:48"` and `"17:32"`), and push the theme again
+   when they drift with the seasons.
 
 6. **Optional, faster menus everywhere:** halve the system animation scales. `disable.sh` already saved
    the old values in step 3, so `restore.sh` puts them back.
@@ -119,12 +135,15 @@ scripts work unchanged, and it installs over an upstream build. Close network de
 | The launcher builds, lints, passes its unit tests and stays under 400 KB | GitHub Actions on this repo, upstream's own CI workflow |
 | Every debloat list parses, and both README tables match `examples/` | Upstream's `tests/`, in CI and locally |
 | Each theme's `config.json` is valid JSON and uses only documented keys | Locally |
-| Each wallpaper is 1920×1080 and under 300 KB, and looks right as a picture | Locally |
+| Each wallpaper is 1920×1080 and under 300 KB, and looks right as a picture | Locally, every frame on a contact sheet |
+| Frame choice for every time of day, odd sunrise/sunset values, wrap-around at midnight | `DayPhaseTest`, in CI |
+| `tools/theme.sh` pushes the 16 frames, removes old ones, and `--reset` removes them | Locally, against a stub TV |
 
 **Not checked:** nothing in this fork has run on a Haier TV. The merged list has not been applied as
 one list to any set (its packages were each disabled on one of the two upstream test sets), the themes
-have not been seen behind the launcher on a TV, and the wallpaper release has not been measured on a
-1 GB set. If you try it, an issue with your model, `tools/tv.py --probe` output and a screenshot is the
+have not been seen behind the launcher on a TV, the frame switch has not been watched on a TV across a
+sunrise or sunset, and the wallpaper release has not been measured on a 1 GB set. `theme.ps1` was changed
+the same way as `theme.sh` but not run. If you try it, an issue with your model, `tools/tv.py --probe` output and a screenshot is the
 most useful thing you can send.
 
 ## Keeping up with upstream

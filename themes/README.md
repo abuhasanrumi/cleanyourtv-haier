@@ -18,7 +18,8 @@ powershell -ExecutionPolicy Bypass -File tools\theme.ps1 -TvHost 192.168.1.50 th
 | `aurora/` | A dark aurora wallpaper (teal and violet on navy, darker at the bottom) with a matching background colour |
 | `dussehra/` | Festive skin for Dussehra (ends 21 Oct 2026): a marigold toran, a faint gold rangoli, a diya for Wi-Fi, a bell for Inputs, a marigold for Settings and a petal shower |
 | `haier-lite/` | Haier fork: the fastest setup for 1 GB sets. No wallpaper, reduced motion, no advanced effects, no module card lookups |
-| `haier-cosy-valley/` | Haier fork: night over a valley with a lit cottage and a crescent moon, under a faint time-of-day tint (`sky_intensity` 25); same speed settings as `haier-lite` |
+| `haier-cosy-valley/` | Haier fork: a valley with a cottage that follows the day in 16 frames: stars and lit windows at night, a sunrise, a sunny noon, a sunset, blue hour; same speed settings as `haier-lite` |
+| `haier-solar/` | Haier fork: the same 16 skies with no scene, plain gradients from night through sunrise, noon and sunset |
 | `haier-hearth/` | Haier fork: a low amber fireside glow with drifting embers; same speed settings |
 | `haier-tide/` | Haier fork: deep blue swells under a band of moonlight; same speed settings |
 | `six-columns/` | Six smaller tiles per row and one grid row visible under the dock |
@@ -53,6 +54,7 @@ is ignored, and a file that doesn't parse is ignored as a whole, so a theme can 
 | `background_color` | `#RRGGBB` | Colour behind everything; black by default |
 | `sky_intensity` | 0 to 100 | Time-of-day backdrop: a dark gradient that follows the clock, 0 hides it (default) |
 | `wallpaper` | bool | Show `wallpaper.jpg` from the theme folder (`true`), or ignore it (`false`) |
+| `sunrise`, `sunset` | `HH:MM` | When the sun rises and sets where the TV is, for time-of-day wallpapers; 06:00 and 18:00 if not set. Times less than six hours apart are ignored |
 | `festival` | string | Turns on a festive skin: the network pill becomes a diya whose flame follows the connection, Inputs a temple bell, Settings a marigold, and the first Home of the day gets a petal shower. `dussehra` and `diwali` have built-in greetings |
 | `festival_until` | `YYYY-MM-DD` | Last day the festive skin shows; it switches itself off after that. A malformed date turns it off |
 | `greeting` | string | Replaces the time-of-day greeting while the festive skin is on |
@@ -66,6 +68,25 @@ is ignored, and a file that doesn't parse is ignored as a whole, so a theme can 
 under about 300 KB: the text, the hero name and the dock band are designed for black, and a 1 GB TV
 decodes the picture into memory on every Home start. Pictures larger than the screen are scaled down to
 it; a picture that is still over 4K (about 8.4 million pixels) after it is sampled down to the screen is not shown at all, and the plain colour stays.
+
+## Time-of-day wallpapers
+
+A theme can ship sixteen frames, `wallpaper-00.jpg` to `wallpaper-15.jpg`, next to `wallpaper.jpg`, and the
+launcher shows the one for the time of day, like a solar dynamic desktop. Most frames sit around sunrise and
+sunset, where the sky changes fastest:
+
+| Frame | Shown from |
+|---|---|
+| `00` | 90 minutes after sunset (night) |
+| `01` to `07` | 90 minutes before sunrise, then every 30 minutes; `04` is sunrise |
+| `08` | two hours after sunrise (day) |
+| `09` to `15` | 90 minutes before sunset, then every 30 minutes; `12` is sunset |
+
+Set `sunrise` and `sunset` for your town in the theme's `config.json`, and change them with the seasons. Only
+one frame is decoded at a time, so the memory cost is the same as one wallpaper; the frame changes on the
+minute tick while Home is open, or when you come back to Home. A frame that is missing falls back to
+`wallpaper.jpg`, which a launcher without this feature shows all day. `tools/theme.sh` pushes the frames and
+removes old ones.
 
 ## Reduced motion
 
@@ -93,9 +114,11 @@ the plain background; the default is off (the reference launcher looks exactly a
 
 ## The Haier fork's wallpapers
 
-The three `haier-*` wallpapers are drawn from code by
+The `haier-*` wallpapers are drawn from code by
 [`tools/wallpapers/make_wallpapers.py`](../tools/wallpapers/make_wallpapers.py) (numpy and Pillow, fixed
-seeds), so they are original and MIT-licensed like the rest of the repo. Each is 1920×1080 and 35 to 45 KB.
+seeds), so they are original and MIT-licensed like the rest of the repo. Each is 1920×1080 and 25 to 70 KB.
+The time-of-day frames follow the shape of macOS's Solar Gradients (most frames around sunrise and sunset)
+with their own colours; no Apple image is used.
 
 ## Adding a theme
 

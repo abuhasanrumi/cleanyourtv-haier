@@ -30,7 +30,7 @@ tv() { "$PY" -I tv.py "$@"; }
 RESTART="a=\$(settings get secure enabled_accessibility_services); am force-stop $PKG; am start -n $PKG/.MainActivity >/dev/null; case \"\$a\" in *$PKG*) sleep 1; settings put secure enabled_accessibility_services ''; settings put secure enabled_accessibility_services \"\$a\"; settings put secure accessibility_enabled 1 ;; esac"
 
 if [ "${1:-}" = --reset ]; then
-  tv "mkdir -p $DIR; rm -f $DIR/config.json $DIR/wallpaper.jpg; printf '%s' '$REVISION' > $DIR/theme_revision; $RESTART; echo reset" | tail -n 1
+  tv "mkdir -p $DIR; rm -f $DIR/config.json $DIR/wallpaper.jpg $DIR/wallpaper-[0-9][0-9].jpg; printf '%s' '$REVISION' > $DIR/theme_revision; $RESTART; echo reset" | tail -n 1
   exit 0
 fi
 THEME="${THEME_ARG:?usage: theme.sh <theme folder> | --reset}"
@@ -45,6 +45,12 @@ if [ -f "$THEME/wallpaper.jpg" ]; then
 else
   tv "rm -f $DIR/wallpaper.jpg" >/dev/null
 fi
+# Time-of-day frames, wallpaper-00.jpg to wallpaper-15.jpg (themes/README.md). Old frames go first, so a
+# theme without them never shows another theme's.
+tv "rm -f $DIR/wallpaper-[0-9][0-9].jpg" >/dev/null
+for frame in "$THEME"/wallpaper-[0-9][0-9].jpg; do
+  if [ -f "$frame" ]; then "$PY" -I b64push.py "$frame" "$DIR/$(basename "$frame")"; fi
+done
 tv "printf '%s' '$REVISION' > $DIR/theme_revision" >/dev/null
 tv "$RESTART; echo applied" | tail -n 1
 echo "Theme $(basename "$THEME") is on the TV. Undo with: tools/theme.sh --reset"

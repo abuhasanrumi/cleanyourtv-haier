@@ -1,0 +1,11 @@
+{
+  "reduced_motion": true,
+  "animations": true,
+  "advanced_effects": false,
+  "module_cards": false,
+  "sky_intensity": 0,
+  "sunrise": "06:00",
+  "sunset": "18:00",
+  "background_color": "#03050E",
+  "wallpaper": true
+}
